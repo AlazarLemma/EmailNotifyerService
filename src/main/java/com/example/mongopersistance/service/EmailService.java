@@ -3,6 +3,7 @@ package com.example.mongopersistance.service;
 
 import com.example.mongopersistance.domain.Email;
 import com.example.mongopersistance.domain.EmailStatus;
+import com.example.mongopersistance.dto2.PaymentStatus;
 import com.example.mongopersistance.dto2.PaymentToDoStatus;
 import com.example.mongopersistance.repository.EmailRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,16 +14,35 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class UserService {
+public class EmailService {
 
     public ObjectMapper objectMapper;
     public EmailRepository emailRepository;
     public ModelMapper modelMapper;
     private final EmailSenderService emailSenderService;
+
+
+
+
+    public List<Email> getAll()
+    {
+        return emailRepository
+                .findAll();
+    }
+
+    public List<Email> findByPaymentStatusPaid(){
+        return emailRepository.findByPaymentStatus("PAID");
+    }
+
+    public List<Email> findByPaymentStatusFailed(){
+        return emailRepository.findByPaymentStatus("FAILED");
+    }
 
     @KafkaListener(topics = "PaymentSuccessTopic", groupId = "group_id")
     public String post(String paymentDtoStatus) {
@@ -31,12 +51,21 @@ public class UserService {
            PaymentToDoStatus paymentToDoStatus1 =objectMapper.readValue(paymentDtoStatus,PaymentToDoStatus.class);
             Email email = modelMapper.map(paymentToDoStatus1, Email.class);
             email.setEmailStatus(EmailStatus.SENT);
+            email.setUserName(paymentToDoStatus1
+                    .getPaymentToDo()
+                    .getOrder()
+                    .getUser()
+                    .getUserName());
             emailRepository.save(email);
-            emailSenderService.sendEmail(paymentToDoStatus1.getPaymentToDo().getOrder().getUser().getEmail(),
+            emailSenderService.sendEmail(paymentToDoStatus1
+                            .getPaymentToDo()
+                            .getOrder()
+                            .getUser()
+                            .getEmail(),
                     "Our Delighted Customer "+ paymentToDoStatus1.getPaymentToDo().getOrder().getUser().getUserName().toUpperCase(Locale.ROOT)+
                             "\n your Order number that made at " + LocalDateTime.now()
                             +" Successfully accepted with total of ",
-                    email.getStatus()+ " Payment " + LocalDateTime.now() );
+                    email.getPaymentStatus()+ " Payment " + LocalDateTime.now() );
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
