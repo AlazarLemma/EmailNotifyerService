@@ -5,6 +5,7 @@ import com.example.mongopersistance.domain.Email;
 import com.example.mongopersistance.dto2.PaymentStatus;
 import com.example.mongopersistance.dto2.PaymentToDo;
 import com.example.mongopersistance.dto2.PaymentToDoStatus;
+import com.example.mongopersistance.dto2.UserCreation;
 import com.example.mongopersistance.repository.EmailRepository;
 import com.example.mongopersistance.service.EmailSenderService;
 import com.example.mongopersistance.service.EmailService;
@@ -21,13 +22,14 @@ import java.util.List;
 @AllArgsConstructor
 public class EmailController {
 
-    KafkaTemplate<String, PaymentToDoStatus> kafkaTemplate;
+    KafkaTemplate<String, Object> kafkaTemplate;
 
     EmailService emailService;
 
 
-    private static final String TOPICSuccess="PaymentSuccessTopic";
+    private static final String TOPICSuccess="PaymentSuccess";
     private static final String TOPICEmail="EmailAllPaid";
+    private static final String TOPICUser="UserCreation";
     //private static final String TOPICFailure="PaymentFailureTopic";
 
 
@@ -35,6 +37,11 @@ public class EmailController {
     public String publish(@RequestBody PaymentToDoStatus paymentToDoStatus){
             kafkaTemplate.send(TOPICSuccess,paymentToDoStatus);
             return "paymentToDoStatus";
+    }
+    @PostMapping("/createUser")
+    public String userCreation(@RequestBody UserCreation userCreation){
+        kafkaTemplate.send(TOPICUser,userCreation);
+        return "user-created";
     }
 
 

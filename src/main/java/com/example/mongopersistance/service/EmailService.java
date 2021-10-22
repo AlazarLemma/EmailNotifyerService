@@ -3,8 +3,10 @@ package com.example.mongopersistance.service;
 
 import com.example.mongopersistance.domain.Email;
 import com.example.mongopersistance.domain.EmailStatus;
+import com.example.mongopersistance.domain.UserCreationDto;
 import com.example.mongopersistance.dto2.PaymentStatus;
 import com.example.mongopersistance.dto2.PaymentToDoStatus;
+import com.example.mongopersistance.dto2.UserCreation;
 import com.example.mongopersistance.repository.EmailRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +39,7 @@ public class EmailService {
     }
 
     public List<Email> findByPaymentStatusPaid(){
+
         return emailRepository.findByPaymentStatus("PAID");
     }
 
@@ -44,7 +47,7 @@ public class EmailService {
         return emailRepository.findByPaymentStatus("FAILED");
     }
 
-    @KafkaListener(topics = "PaymentSuccessTopic", groupId = "group_id")
+    @KafkaListener(topics = "PaymentSuccess", groupId = "group_id")
     public String post(String paymentDtoStatus) {
         System.out.println("success user");
         try {
@@ -62,15 +65,27 @@ public class EmailService {
                             .getOrder()
                             .getUser()
                             .getEmail(),
-                    "Our Delighted Customer "+ paymentToDoStatus1.getPaymentToDo().getOrder().getUser().getUserName().toUpperCase(Locale.ROOT)+
+                    "Our Delighted Customer "+ paymentToDoStatus1.getPaymentToDo()
+                            .getOrder().getUser().getUserName().toUpperCase(Locale.ROOT)+
                             "\n your Order number that made at " + LocalDateTime.now()
-                            +" Successfully accepted with total of ",
+                            +" Successfully accepted with total of " + paymentToDoStatus1.
+                            getPaymentToDo().getPaymentToMake().get("Total"),
                     email.getPaymentStatus()+ " Payment " + LocalDateTime.now() );
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
         return "Post_Done";
     }
+
+        }
+
+
+
+
+
+
+
+
 //    @KafkaListener(topics = "PaymentFailureTopic", groupId = "group_id")
 //    public String postFailure(String user) {
 //        System.out.println("fail User");
@@ -89,5 +104,5 @@ public class EmailService {
 //        }
 //        return "Post_Done";
 //    }
-}
+
 

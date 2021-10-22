@@ -12,7 +12,6 @@ public class EmailSenderService {
 
     private final JavaMailSender mailSender;
 
-
     public void sendEmail(String toEmail, String body,String subject){
 
         SimpleMailMessage message=new SimpleMailMessage();
